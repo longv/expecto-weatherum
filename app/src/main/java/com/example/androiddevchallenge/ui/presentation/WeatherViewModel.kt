@@ -1,5 +1,7 @@
 package com.example.androiddevchallenge.ui.presentation
 
+import android.location.Address
+import android.location.Location
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -27,45 +29,41 @@ class WeatherViewModel : ViewModel() {
     private val _state = MutableLiveData<LocationWeatherState>()
     val state: LiveData<LocationWeatherState> = _state
 
-    fun loadWeatherData() {
-        viewModelScope.launch {
-            val result = WeatherRepository.getWeather(
-                lat = 60.16724396659218f,
-                lng = 24.974772156177295f,
-                startTime = TimestampUtils.getISO8601StringForNow(),
-                endTime = TimestampUtils.getISO8601StringForDate(Date().apply { time += 24 * 3600 * 1000 })
-            )
-            when (result) {
-                is Result.Success -> {
-                    _state.value = result.value.mapToWeatherState("Helsinki")
-                }
-                is Result.Error -> {
-                    _message.value =
-                        Message(result.exception.message ?: "An unknown error has occurred!")
-                }
-            }
-        }
+    fun onCurrentLocationProvided(address: Address) {
+        loadWeatherForLocation(
+            address.latitude.toFloat(),
+            address.longitude.toFloat(),
+            address.locality
+        )
     }
 
     fun onPlaceSearchSucceeded(place: Place) {
-       loadWeatherForLocation(place)
+       loadWeatherForLocation(
+           place.latLng!!.latitude.toFloat(),
+           place.latLng!!.longitude.toFloat(),
+           place.name.orEmpty()
+       )
     }
 
     fun onPlaceSearchCancelled() {
         _message.value = Message("Cannot search for places!")
     }
 
-    private fun loadWeatherForLocation(place: Place) {
+    private fun loadWeatherForLocation(
+        lat: Float,
+        lng: Float,
+        placeName: String
+    ) {
         viewModelScope.launch {
             val result = WeatherRepository.getWeather(
-                lat = place.latLng!!.latitude.toFloat(),
-                lng = place.latLng!!.longitude.toFloat(),
+                lat = lat,
+                lng = lng,
                 startTime = TimestampUtils.getISO8601StringForNow(),
                 endTime = TimestampUtils.getISO8601StringForDate(Date().apply { time += 24 * 3600 * 1000 })
             )
             when (result) {
                 is Result.Success -> {
-                    _state.value = result.value.mapToWeatherState(place.name.orEmpty())
+                    _state.value = result.value.mapToWeatherState(placeName)
                 }
                 is Result.Error -> {
                     _message.value =

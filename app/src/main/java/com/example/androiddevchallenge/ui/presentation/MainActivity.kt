@@ -15,10 +15,15 @@
  */
 package com.example.androiddevchallenge.ui.presentation
 
+import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.location.Geocoder
 import android.os.Bundle
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.background
@@ -38,6 +43,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieAnimationSpec
 import com.airbnb.lottie.compose.rememberLottieAnimationState
@@ -48,6 +54,8 @@ import com.example.androiddevchallenge.ui.presentation.model.CurrentWeather
 import com.example.androiddevchallenge.ui.presentation.model.HourWeather
 import com.example.androiddevchallenge.ui.presentation.model.LocationWeatherState
 import com.example.androiddevchallenge.ui.presentation.model.Message
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.widget.Autocomplete
@@ -57,6 +65,18 @@ class MainActivity : AppCompatActivity() {
 
     private val viewModel by viewModels<WeatherViewModel>()
 
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+
+    private lateinit var geocoder: Geocoder
+
+    private val locationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            initWeatherForLastKnownLocation()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -65,7 +85,12 @@ class MainActivity : AppCompatActivity() {
                 MyApp(viewModel) {
                     val intent = Autocomplete.IntentBuilder(
                         AutocompleteActivityMode.FULLSCREEN,
-                        listOf(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG)
+                        listOf(
+                            Place.Field.ID,
+                            Place.Field.NAME,
+                            Place.Field.LAT_LNG,
+                            Place.Field.UTC_OFFSET
+                        )
                     ).build(this)
                     // TODO Replace with new registerForActivityResult
                     startActivityForResult(intent, AUTOCOMPLETE_REQUEST_CODE)
@@ -74,15 +99,43 @@ class MainActivity : AppCompatActivity() {
         }
 
         initPlaceSdk()
-        initViewModel()
+        initLocationHelpers()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        checkLocationPermission() {
+            initWeatherForLastKnownLocation()
+        }
     }
 
     private fun initPlaceSdk() {
         Places.initialize(this, BuildConfig.GOOGLE_PLACES_API_KEY)
     }
 
-    private fun initViewModel() {
-        viewModel.loadWeatherData()
+    private fun initLocationHelpers() {
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        geocoder = Geocoder(this)
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun initWeatherForLastKnownLocation() {
+        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+            val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
+            addresses.firstOrNull()?.also { address ->
+                viewModel.onCurrentLocationProvided(address)
+            }
+        }
+    }
+
+    private fun checkLocationPermission(doOnGranted: () -> Unit) {
+        val locationPermission =
+            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+        if (locationPermission != PackageManager.PERMISSION_GRANTED) {
+            locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        } else {
+            doOnGranted()
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
