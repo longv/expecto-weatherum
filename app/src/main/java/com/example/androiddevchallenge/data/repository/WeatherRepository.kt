@@ -13,14 +13,26 @@ object WeatherRepository {
     }
 
     @Suppress("BlockingMethodInNonBlockingContext")
-    suspend fun getWeather(lat: Float, lng: Float): Result<List<WeatherTimeline>> =
+    suspend fun getWeather(
+        lat: Float,
+        lng: Float,
+        startTime: String,
+        endTime: String
+    ): Result<WeatherTimeline> =
         withContext(Dispatchers.IO) {
             val response = api.getWeather(
                 location = "$lat,$lng",
-                fields = "weatherCode,temperature,temperatureApparent,humidity,windSpeed,cloudCover,precipitationProbability,precipitationType,sunriseTime,sunsetTime",
+                fields = "weatherCode,temperature,temperatureApparent,humidity,windSpeed,cloudCover,precipitationProbability,precipitationType",
+                startTime = startTime,
+                endTime = endTime
             ).execute()
             if (response.isSuccessful) {
-                Result.Success(response.body()?.timelines.orEmpty())
+                val timeline = response.body()?.data?.timelines?.firstOrNull()
+                if (timeline != null) {
+                    Result.Success(timeline)
+                } else {
+                    Result.Error(IllegalStateException("No result found!"))
+                }
             } else {
                 Result.Error(IllegalStateException(response.errorBody()?.string().orEmpty()))
             }

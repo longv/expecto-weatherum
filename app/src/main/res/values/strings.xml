@@ -10,4 +10,6 @@
       the License.
       -->
     <string name="app_name">AndroidDevChallenge</string>
+    <string name="now">Now</string>
+    <string name="temperature_apparent_x">Feel like %s</string>
 </resources>
