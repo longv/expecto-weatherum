@@ -6,6 +6,8 @@ import java.util.*
 
 object TimestampUtils {
 
+    private const val ISO_8601_FORMAT = "yyyy-MM-dd'T'HH:mm:ss"
+
     /**
      * Return an ISO 8601 combined date and time string for current date/time
      *
@@ -24,7 +26,7 @@ object TimestampUtils {
      * @return String with format "yyyy-MM-dd'T'HH:mm:ss'Z'"
      */
     fun getISO8601StringForDate(date: Date): String {
-        val dateFormat: DateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
+        val dateFormat: DateFormat = SimpleDateFormat(ISO_8601_FORMAT, Locale.US)
         return dateFormat.format(date)
     }
 
@@ -36,7 +38,7 @@ object TimestampUtils {
      * @return String with format "HH"
      */
     fun getHHStringForDate(date: String): String {
-        val dateFormat: DateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
+        val dateFormat: DateFormat = SimpleDateFormat(ISO_8601_FORMAT, Locale.US)
         val calendar = Calendar.getInstance().apply {
             time = dateFormat.parse(date) ?: Date()
         }
@@ -52,7 +54,7 @@ object TimestampUtils {
      * @return True if specified date is at night
      */
     fun isNightTime(date: String): Boolean {
-        val dateFormat: DateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
+        val dateFormat: DateFormat = SimpleDateFormat(ISO_8601_FORMAT, Locale.US)
         val calendar = Calendar.getInstance().apply {
             time = dateFormat.parse(date) ?: Date()
         }

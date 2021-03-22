@@ -110,7 +110,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initPlaceSdk() {
-        Places.initialize(this, BuildConfig.GOOGLE_PLACES_API_KEY)
+        Places.initialize(this, BuildConfig.GOOGLE_MAP_API_KEY)
     }
 
     private fun initLocationHelpers() {

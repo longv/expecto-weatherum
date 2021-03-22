@@ -9,9 +9,14 @@ ext {
         return properties["climacell.base.url"]
     }
 
-    googlePlacesApiKey = {
+    googleMapApiKey = {
         def properties = configProperties()
-        return properties["google.places.api.key"]
+        return properties["google.map.api.key"]
+    }
+
+    googleMapBaseUrl = {
+        def properties = configProperties()
+        return properties["google.map.base.url"]
     }
 
     configProperties = {

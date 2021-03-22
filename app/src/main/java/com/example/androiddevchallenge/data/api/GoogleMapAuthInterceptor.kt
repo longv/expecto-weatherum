@@ -4,12 +4,12 @@ import com.example.androiddevchallenge.BuildConfig
 import okhttp3.Interceptor
 import okhttp3.Response
 
-class AuthInterceptor: Interceptor {
+class GoogleMapAuthInterceptor: Interceptor {
 
     override fun intercept(chain: Interceptor.Chain): Response {
         val url = chain.request().url()
             .newBuilder()
-            .addQueryParameter("apikey", BuildConfig.CLIMACELL_API_KEY)
+            .addQueryParameter("key", BuildConfig.GOOGLE_MAP_API_KEY)
             .build()
         val request = chain.request()
             .newBuilder()

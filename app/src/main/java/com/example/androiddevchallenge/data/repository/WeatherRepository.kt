@@ -1,6 +1,7 @@
 package com.example.androiddevchallenge.data.repository
 
 import com.example.androiddevchallenge.data.api.RetrofitProvider
+import com.example.androiddevchallenge.data.api.TimeZoneApi
 import com.example.androiddevchallenge.data.api.WeatherApi
 import com.example.androiddevchallenge.data.model.WeatherTimeline
 import kotlinx.coroutines.Dispatchers
@@ -8,8 +9,12 @@ import kotlinx.coroutines.withContext
 
 object WeatherRepository {
 
-    private val api by lazy {
-        RetrofitProvider.provide().create(WeatherApi::class.java)
+    private val weatherApi by lazy {
+        RetrofitProvider.provideClimacell().create(WeatherApi::class.java)
+    }
+
+    private val timeZoneApi by lazy {
+        RetrofitProvider.provideGoogleMap().create(TimeZoneApi::class.java)
     }
 
     @Suppress("BlockingMethodInNonBlockingContext")
@@ -20,21 +25,24 @@ object WeatherRepository {
         endTime: String
     ): Result<WeatherTimeline> =
         withContext(Dispatchers.IO) {
-            val response = api.getWeather(
+            val timeZoneResponse = timeZoneApi.getTimeZone(
+                location = "$lat,$lng",
+                timestamp = System.currentTimeMillis() / 1000
+            ).execute()
+            val weatherResponse = weatherApi.getWeather(
                 location = "$lat,$lng",
                 fields = "weatherCode,temperature,temperatureApparent,humidity,windSpeed,cloudCover,precipitationProbability,precipitationType",
-                startTime = startTime,
-                endTime = endTime
+                timezone = timeZoneResponse.takeIf { it.isSuccessful }?.body()?.timeZoneId
             ).execute()
-            if (response.isSuccessful) {
-                val timeline = response.body()?.data?.timelines?.firstOrNull()
+            if (weatherResponse.isSuccessful) {
+                val timeline = weatherResponse.body()?.data?.timelines?.firstOrNull()
                 if (timeline != null) {
                     Result.Success(timeline)
                 } else {
                     Result.Error(IllegalStateException("No result found!"))
                 }
             } else {
-                Result.Error(IllegalStateException(response.errorBody()?.string().orEmpty()))
+                Result.Error(IllegalStateException(weatherResponse.errorBody()?.string().orEmpty()))
             }
         }
 }
