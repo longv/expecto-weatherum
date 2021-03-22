@@ -1,0 +1,27 @@
+ext {
+    climacellApiKey = {
+        def properties = configProperties()
+        return properties["climacell.api.key"]
+    }
+
+    climacellBaseUrl = {
+        def properties = configProperties()
+        return properties["climacell.base.url"]
+    }
+
+    googlePlacesApiKey = {
+        def properties = configProperties()
+        return properties["google.places.api.key"]
+    }
+
+    configProperties = {
+        File propertyFile = rootProject.file("config.properties")
+        Properties properties = new Properties()
+        if (propertyFile.canRead()) {
+            properties.load(new FileInputStream(propertyFile))
+        } else {
+            println("GradleException: Unable to read file config.properties")
+        }
+        return properties
+    }
+}

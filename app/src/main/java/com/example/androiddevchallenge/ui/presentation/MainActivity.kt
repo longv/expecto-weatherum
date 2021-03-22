@@ -15,6 +15,8 @@
  */
 package com.example.androiddevchallenge.ui.presentation
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -31,7 +33,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.AlignmentLine
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -40,13 +41,17 @@ import androidx.compose.ui.unit.dp
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieAnimationSpec
 import com.airbnb.lottie.compose.rememberLottieAnimationState
+import com.example.androiddevchallenge.BuildConfig
 import com.example.androiddevchallenge.ui.theme.MyTheme
 import com.example.androiddevchallenge.R
 import com.example.androiddevchallenge.ui.presentation.model.CurrentWeather
 import com.example.androiddevchallenge.ui.presentation.model.HourWeather
 import com.example.androiddevchallenge.ui.presentation.model.LocationWeatherState
 import com.example.androiddevchallenge.ui.presentation.model.Message
-import kotlin.reflect.KProperty
+import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.widget.Autocomplete
+import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
 
 class MainActivity : AppCompatActivity() {
 
@@ -54,28 +59,75 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContent {
             MyTheme {
-                MyApp(viewModel)
+                MyApp(viewModel) {
+                    val intent = Autocomplete.IntentBuilder(
+                        AutocompleteActivityMode.FULLSCREEN,
+                        listOf(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG)
+                    ).build(this)
+                    // TODO Replace with new registerForActivityResult
+                    startActivityForResult(intent, AUTOCOMPLETE_REQUEST_CODE)
+                }
             }
         }
+
+        initPlaceSdk()
         initViewModel()
+    }
+
+    private fun initPlaceSdk() {
+        Places.initialize(this, BuildConfig.GOOGLE_PLACES_API_KEY)
     }
 
     private fun initViewModel() {
         viewModel.loadWeatherData()
     }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (requestCode == AUTOCOMPLETE_REQUEST_CODE) {
+            if (resultCode == Activity.RESULT_OK) {
+                data?.also {
+                    val place = Autocomplete.getPlaceFromIntent(it)
+                    viewModel.onPlaceSearchSucceeded(place)
+                }
+            } else {
+                viewModel.onPlaceSearchCancelled()
+            }
+        } else {
+            super.onActivityResult(requestCode, resultCode, data)
+        }
+    }
+
+    companion object {
+        const val AUTOCOMPLETE_REQUEST_CODE = 1
+    }
 }
 
 // Start building your app here!
 @Composable
-fun MyApp(viewModel: WeatherViewModel) {
-    Surface(color = MaterialTheme.colors.background) {
-        val weatherState: LocationWeatherState? by viewModel.state.observeAsState()
-        weatherState?.let {
-            LocationWeather(it)
+fun MyApp(viewModel: WeatherViewModel, onSearchLocationRequested: () -> Unit = {}) {
+    Scaffold(
+        content = {
+            val weatherState: LocationWeatherState? by viewModel.state.observeAsState()
+            weatherState?.let {
+                LocationWeather(it)
+            }
+
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = onSearchLocationRequested
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_outline_search),
+                    contentDescription = "Search location"
+                )
+            }
         }
-    }
+    )
+
 
     val message: Message? by viewModel.message.observeAsState()
     message?.Read {
@@ -89,7 +141,7 @@ fun LocationWeather(weatherState: LocationWeatherState) {
         modifier = Modifier.background(Color.Yellow)
     ) {
         Text(
-            text = "Helsinki",
+            text = weatherState.locationName,
             textAlign = TextAlign.Center,
             modifier = Modifier
                 .padding(top = 16.dp, bottom = 16.dp)

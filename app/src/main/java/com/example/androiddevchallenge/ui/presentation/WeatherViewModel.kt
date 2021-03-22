@@ -15,6 +15,7 @@ import com.example.androiddevchallenge.ui.presentation.model.HourWeather
 import com.example.androiddevchallenge.ui.presentation.model.LocationWeatherState
 import com.example.androiddevchallenge.ui.presentation.model.Message
 import com.example.androiddevchallenge.data.util.TimestampUtils
+import com.google.android.libraries.places.api.model.Place
 import kotlinx.coroutines.launch
 import java.util.*
 
@@ -36,7 +37,7 @@ class WeatherViewModel : ViewModel() {
             )
             when (result) {
                 is Result.Success -> {
-                    _state.value = result.value.mapToWeatherState()
+                    _state.value = result.value.mapToWeatherState("Helsinki")
                 }
                 is Result.Error -> {
                     _message.value =
@@ -46,7 +47,36 @@ class WeatherViewModel : ViewModel() {
         }
     }
 
-    private fun WeatherTimeline.mapToWeatherState() = LocationWeatherState(
+    fun onPlaceSearchSucceeded(place: Place) {
+       loadWeatherForLocation(place)
+    }
+
+    fun onPlaceSearchCancelled() {
+        _message.value = Message("Cannot search for places!")
+    }
+
+    private fun loadWeatherForLocation(place: Place) {
+        viewModelScope.launch {
+            val result = WeatherRepository.getWeather(
+                lat = place.latLng!!.latitude.toFloat(),
+                lng = place.latLng!!.longitude.toFloat(),
+                startTime = TimestampUtils.getISO8601StringForNow(),
+                endTime = TimestampUtils.getISO8601StringForDate(Date().apply { time += 24 * 3600 * 1000 })
+            )
+            when (result) {
+                is Result.Success -> {
+                    _state.value = result.value.mapToWeatherState(place.name.orEmpty())
+                }
+                is Result.Error -> {
+                    _message.value =
+                        Message(result.exception.message ?: "An unknown error has occurred!")
+                }
+            }
+        }
+    }
+
+    private fun WeatherTimeline.mapToWeatherState(locationName: String) = LocationWeatherState(
+        locationName = locationName,
         currentWeather = intervals.first().let {
             CurrentWeather(
                 temperature = it.values.temperature.toInt().toString().plus(" \u2103"),

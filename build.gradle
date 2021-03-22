@@ -19,6 +19,7 @@ buildscript {
     ext.compose_version = "1.0.0-beta02"
     ext.coroutines_version = "1.4.3"
     ext.ktx_version = "2.3.0"
+    ext.places_version = "2.4.0"
     ext.lottie_version = "1.0.0-alpha07-SNAPSHOT"
     ext.gson_version = "2.8.6"
     ext.retrofit_version = "2.9.0"

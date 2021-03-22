@@ -36,4 +36,4 @@ proguard-project.txt
 .idea
 
 # Project configuation file
-climacell.properties
+config.properties
