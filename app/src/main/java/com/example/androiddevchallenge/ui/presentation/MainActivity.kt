@@ -26,7 +26,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -37,7 +36,6 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -50,10 +48,7 @@ import com.airbnb.lottie.compose.rememberLottieAnimationState
 import com.example.androiddevchallenge.BuildConfig
 import com.example.androiddevchallenge.ui.theme.MyTheme
 import com.example.androiddevchallenge.R
-import com.example.androiddevchallenge.ui.presentation.model.CurrentWeather
-import com.example.androiddevchallenge.ui.presentation.model.HourWeather
-import com.example.androiddevchallenge.ui.presentation.model.LocationWeatherState
-import com.example.androiddevchallenge.ui.presentation.model.Message
+import com.example.androiddevchallenge.ui.presentation.model.*
 import com.example.androiddevchallenge.ui.presentation.widget.Pager
 import com.example.androiddevchallenge.ui.presentation.widget.PagerState
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -169,7 +164,6 @@ fun MyApp(viewModel: WeatherViewModel, onSearchLocationRequested: () -> Unit = {
             weatherStates?.let {
                 AllLocationsWeather(it)
             }
-
         },
         floatingActionButton = {
             FloatingActionButton(
@@ -182,7 +176,6 @@ fun MyApp(viewModel: WeatherViewModel, onSearchLocationRequested: () -> Unit = {
             }
         }
     )
-
 
     val message: Message? by viewModel.message.observeAsState()
     message?.Read {
@@ -202,30 +195,49 @@ fun AllLocationsWeather(weatherStates: List<LocationWeatherState>) {
         modifier = Modifier.fillMaxHeight()
     ) {
         weatherStates.getOrNull(currentPage)?.let {
-            LocationWeather(it)
+            LocationWeather(it) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    weatherStates.forEachIndexed { index, _ ->
+                        Icon(
+                            painter = if (index == pagerState.currentPage) {
+                                painterResource(id = R.drawable.ic_filled_circle)
+                            } else {
+                                painterResource(id = R.drawable.ic_outline_circle)
+                            },
+                            contentDescription = "Pager marker",
+                            modifier = Modifier.height(16.dp).width(16.dp)
+                        )
+                    }
+                }
+            }
         }
     }
 }
 
 @Composable
-fun LocationWeather(weatherState: LocationWeatherState) {
+fun LocationWeather(
+    weatherState: LocationWeatherState,
+    headerContent: @Composable () -> Unit
+) {
     Column(
         modifier = Modifier
-            .background(Color.Yellow)
             .fillMaxHeight()
             .fillMaxWidth()
     ) {
+        headerContent()
         Text(
             text = weatherState.locationName,
             textAlign = TextAlign.Center,
             modifier = Modifier
                 .padding(top = 16.dp, bottom = 16.dp)
-                .background(Color.Cyan)
                 .fillMaxWidth()
         )
         WeatherDisplay(weatherState.currentWeather)
         HourlyWeather(weatherState.hourlyWeather)
-        //DailyWeather()
     }
 }
 
@@ -233,7 +245,7 @@ fun LocationWeather(weatherState: LocationWeatherState) {
 fun WeatherDisplay(currentWeather: CurrentWeather) {
     Column(
         modifier = Modifier
-            .background(Color.Green)
+            .fillMaxHeight(fraction = 0.6f)
             .fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -244,7 +256,8 @@ fun WeatherDisplay(currentWeather: CurrentWeather) {
             text = stringResource(
                 id = R.string.temperature_apparent_x,
                 currentWeather.temperatureApparent
-            )
+            ),
+            modifier = Modifier.padding(bottom = 16.dp)
         )
         // Animation for current weather
         LottieAnimation(
@@ -254,8 +267,7 @@ fun WeatherDisplay(currentWeather: CurrentWeather) {
                 repeatCount = Integer.MAX_VALUE
             ),
             modifier = Modifier
-                .height(200.dp)
-                .width(200.dp)
+                .fillMaxHeight()
         )
     }
 }
@@ -286,26 +298,6 @@ fun WeatherPerHour(hourWeather: HourWeather) {
                 .width(32.dp)
         )
         Text(text = hourWeather.temperature)
-    }
-}
-
-@Composable
-fun DailyWeather() {
-    Column {
-        WeatherPerDay()
-        WeatherPerDay()
-        WeatherPerDay()
-        WeatherPerDay()
-    }
-}
-
-@Composable
-fun WeatherPerDay() {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Text(text = "Monday")
-        Text(text = "Sunny")
     }
 }
 
