@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.painter.Painter
 
 data class LocationWeatherState(
+    val id: String,
     val locationName: String,
     val currentWeather: CurrentWeather,
     val hourlyWeather: List<HourWeather>

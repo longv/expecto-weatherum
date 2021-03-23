@@ -26,8 +26,8 @@ class WeatherViewModel : ViewModel() {
     private val _message = MutableLiveData<Message>()
     val message: LiveData<Message> = _message
 
-    private val _state = MutableLiveData<LocationWeatherState>()
-    val state: LiveData<LocationWeatherState> = _state
+    private val _state = MutableLiveData<List<LocationWeatherState>>()
+    val state: LiveData<List<LocationWeatherState>> = _state
 
     fun onCurrentLocationProvided(address: Address) {
         loadWeatherForLocation(
@@ -63,7 +63,8 @@ class WeatherViewModel : ViewModel() {
             )
             when (result) {
                 is Result.Success -> {
-                    _state.value = result.value.mapToWeatherState(placeName)
+                    val locationWeatherState = result.value.mapToWeatherState(placeName)
+                    _state.value = listOf(locationWeatherState).plus(_state.value.orEmpty()).distinctBy { it.id }
                 }
                 is Result.Error -> {
                     _message.value =
@@ -74,6 +75,7 @@ class WeatherViewModel : ViewModel() {
     }
 
     private fun WeatherTimeline.mapToWeatherState(locationName: String) = LocationWeatherState(
+        id = locationName,
         locationName = locationName,
         currentWeather = intervals.first().let {
             CurrentWeather(

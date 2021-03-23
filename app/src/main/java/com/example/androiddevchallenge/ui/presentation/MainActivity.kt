@@ -54,6 +54,8 @@ import com.example.androiddevchallenge.ui.presentation.model.CurrentWeather
 import com.example.androiddevchallenge.ui.presentation.model.HourWeather
 import com.example.androiddevchallenge.ui.presentation.model.LocationWeatherState
 import com.example.androiddevchallenge.ui.presentation.model.Message
+import com.example.androiddevchallenge.ui.presentation.widget.Pager
+import com.example.androiddevchallenge.ui.presentation.widget.PagerState
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.libraries.places.api.Places
@@ -163,9 +165,9 @@ class MainActivity : AppCompatActivity() {
 fun MyApp(viewModel: WeatherViewModel, onSearchLocationRequested: () -> Unit = {}) {
     Scaffold(
         content = {
-            val weatherState: LocationWeatherState? by viewModel.state.observeAsState()
-            weatherState?.let {
-                LocationWeather(it)
+            val weatherStates: List<LocationWeatherState>? by viewModel.state.observeAsState()
+            weatherStates?.let {
+                AllLocationsWeather(it)
             }
 
         },
@@ -189,9 +191,29 @@ fun MyApp(viewModel: WeatherViewModel, onSearchLocationRequested: () -> Unit = {
 }
 
 @Composable
+fun AllLocationsWeather(weatherStates: List<LocationWeatherState>) {
+    val pagerState = remember {
+        PagerState()
+    }.apply {
+        maxPage = (weatherStates.size - 1).coerceAtLeast(0)
+    }
+    Pager(
+        state = pagerState,
+        modifier = Modifier.fillMaxHeight()
+    ) {
+        weatherStates.getOrNull(currentPage)?.let {
+            LocationWeather(it)
+        }
+    }
+}
+
+@Composable
 fun LocationWeather(weatherState: LocationWeatherState) {
     Column(
-        modifier = Modifier.background(Color.Yellow)
+        modifier = Modifier
+            .background(Color.Yellow)
+            .fillMaxHeight()
+            .fillMaxWidth()
     ) {
         Text(
             text = weatherState.locationName,
@@ -226,7 +248,7 @@ fun WeatherDisplay(currentWeather: CurrentWeather) {
         )
         // Animation for current weather
         LottieAnimation(
-            spec = remember { LottieAnimationSpec.RawRes(currentWeather.anim) },
+            spec = LottieAnimationSpec.RawRes(currentWeather.anim),
             animationState = rememberLottieAnimationState(
                 autoPlay = true,
                 repeatCount = Integer.MAX_VALUE
