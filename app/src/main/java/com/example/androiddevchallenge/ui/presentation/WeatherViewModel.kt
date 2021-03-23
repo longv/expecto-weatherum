@@ -1,7 +1,6 @@
 package com.example.androiddevchallenge.ui.presentation
 
 import android.location.Address
-import android.location.Location
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -12,14 +11,10 @@ import com.example.androiddevchallenge.data.model.WeatherTimeline
 import com.example.androiddevchallenge.data.model.WeatherType
 import com.example.androiddevchallenge.data.repository.Result
 import com.example.androiddevchallenge.data.repository.WeatherRepository
-import com.example.androiddevchallenge.ui.presentation.model.CurrentWeather
-import com.example.androiddevchallenge.ui.presentation.model.HourWeather
-import com.example.androiddevchallenge.ui.presentation.model.LocationWeatherState
-import com.example.androiddevchallenge.ui.presentation.model.Message
 import com.example.androiddevchallenge.data.util.TimestampUtils
+import com.example.androiddevchallenge.ui.presentation.model.*
 import com.google.android.libraries.places.api.model.Place
 import kotlinx.coroutines.launch
-import java.util.*
 
 class WeatherViewModel : ViewModel() {
 
@@ -45,10 +40,6 @@ class WeatherViewModel : ViewModel() {
        )
     }
 
-    fun onPlaceSearchCancelled() {
-        _message.value = Message("Cannot search for places!")
-    }
-
     private fun loadWeatherForLocation(
         lat: Float,
         lng: Float,
@@ -57,14 +48,12 @@ class WeatherViewModel : ViewModel() {
         viewModelScope.launch {
             val result = WeatherRepository.getWeather(
                 lat = lat,
-                lng = lng,
-                startTime = TimestampUtils.getISO8601StringForNow(),
-                endTime = TimestampUtils.getISO8601StringForDate(Date().apply { time += 24 * 3600 * 1000 })
+                lng = lng
             )
             when (result) {
                 is Result.Success -> {
                     val locationWeatherState = result.value.mapToWeatherState(placeName)
-                    _state.value = listOf(locationWeatherState).plus(_state.value.orEmpty()).distinctBy { it.id }
+                    _state.value = _state.value.orEmpty().plus(locationWeatherState).distinctBy { it.id }
                 }
                 is Result.Error -> {
                     _message.value =

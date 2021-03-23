@@ -30,10 +30,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -97,10 +95,6 @@ class MainActivity : AppCompatActivity() {
 
         initPlaceSdk()
         initLocationHelpers()
-    }
-
-    override fun onResume() {
-        super.onResume()
         checkLocationPermission() {
             initWeatherForLastKnownLocation()
         }
@@ -142,8 +136,6 @@ class MainActivity : AppCompatActivity() {
                     val place = Autocomplete.getPlaceFromIntent(it)
                     viewModel.onPlaceSearchSucceeded(place)
                 }
-            } else {
-                viewModel.onPlaceSearchCancelled()
             }
         } else {
             super.onActivityResult(requestCode, resultCode, data)
@@ -185,11 +177,20 @@ fun MyApp(viewModel: WeatherViewModel, onSearchLocationRequested: () -> Unit = {
 
 @Composable
 fun AllLocationsWeather(weatherStates: List<LocationWeatherState>) {
-    val pagerState = remember {
-        PagerState()
-    }.apply {
-        maxPage = (weatherStates.size - 1).coerceAtLeast(0)
+    val pagerState by remember {
+        mutableStateOf(PagerState())
     }
+    with(pagerState) {
+        val newMaxPage = (weatherStates.size - 1).coerceAtLeast(0)
+        val maxPageChanged = maxPage != newMaxPage
+        maxPage = newMaxPage
+        currentPage = if (maxPageChanged) {
+            newMaxPage
+        } else {
+            currentPage
+        }
+    }
+
     Pager(
         state = pagerState,
         modifier = Modifier.fillMaxHeight()
@@ -198,7 +199,8 @@ fun AllLocationsWeather(weatherStates: List<LocationWeatherState>) {
             LocationWeather(it) {
                 Row(
                     modifier = Modifier
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .padding(top = 16.dp),
                     horizontalArrangement = Arrangement.Center
                 ) {
                     weatherStates.forEachIndexed { index, _ ->
@@ -209,7 +211,9 @@ fun AllLocationsWeather(weatherStates: List<LocationWeatherState>) {
                                 painterResource(id = R.drawable.ic_outline_circle)
                             },
                             contentDescription = "Pager marker",
-                            modifier = Modifier.height(16.dp).width(16.dp)
+                            modifier = Modifier
+                                .height(16.dp)
+                                .width(16.dp)
                         )
                     }
                 }

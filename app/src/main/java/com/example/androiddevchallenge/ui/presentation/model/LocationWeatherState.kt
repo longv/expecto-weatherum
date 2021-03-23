@@ -53,7 +53,7 @@ val dummyLocationWeatherStates = listOf(
         )
     ),
     LocationWeatherState(
-        id = "1",
+        id = "2",
         locationName = "Ho Chi Minh",
         currentWeather = CurrentWeather(
             temperature = "1C",

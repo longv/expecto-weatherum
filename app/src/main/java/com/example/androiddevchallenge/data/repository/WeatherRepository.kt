@@ -20,9 +20,7 @@ object WeatherRepository {
     @Suppress("BlockingMethodInNonBlockingContext")
     suspend fun getWeather(
         lat: Float,
-        lng: Float,
-        startTime: String,
-        endTime: String
+        lng: Float
     ): Result<WeatherTimeline> =
         withContext(Dispatchers.IO) {
             val timeZoneResponse = timeZoneApi.getTimeZone(
