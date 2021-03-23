@@ -1,3 +1,18 @@
+/*
+ * Copyright 2021 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.example.androiddevchallenge.ui.presentation
 
 import android.location.Address
@@ -12,7 +27,10 @@ import com.example.androiddevchallenge.data.model.WeatherType
 import com.example.androiddevchallenge.data.repository.Result
 import com.example.androiddevchallenge.data.repository.WeatherRepository
 import com.example.androiddevchallenge.data.util.TimestampUtils
-import com.example.androiddevchallenge.ui.presentation.model.*
+import com.example.androiddevchallenge.ui.presentation.model.CurrentWeather
+import com.example.androiddevchallenge.ui.presentation.model.HourWeather
+import com.example.androiddevchallenge.ui.presentation.model.LocationWeatherState
+import com.example.androiddevchallenge.ui.presentation.model.Message
 import com.google.android.libraries.places.api.model.Place
 import kotlinx.coroutines.launch
 
@@ -33,11 +51,11 @@ class WeatherViewModel : ViewModel() {
     }
 
     fun onPlaceSearchSucceeded(place: Place) {
-       loadWeatherForLocation(
-           place.latLng!!.latitude.toFloat(),
-           place.latLng!!.longitude.toFloat(),
-           place.name.orEmpty()
-       )
+        loadWeatherForLocation(
+            place.latLng!!.latitude.toFloat(),
+            place.latLng!!.longitude.toFloat(),
+            place.name.orEmpty()
+        )
     }
 
     private fun loadWeatherForLocation(
@@ -53,7 +71,8 @@ class WeatherViewModel : ViewModel() {
             when (result) {
                 is Result.Success -> {
                     val locationWeatherState = result.value.mapToWeatherState(placeName)
-                    _state.value = _state.value.orEmpty().plus(locationWeatherState).distinctBy { it.id }
+                    _state.value =
+                        _state.value.orEmpty().plus(locationWeatherState).distinctBy { it.id }
                 }
                 is Result.Error -> {
                     _message.value =
